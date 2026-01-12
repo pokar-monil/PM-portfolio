@@ -5,18 +5,22 @@ import {
   Linkedin,
   Github,
   CheckCircle2,
-  Archive,
   TrendingUp,
   Users,
   Target,
   Lightbulb,
   BarChart3,
-  Zap
+  Zap,
+  Play
 } from 'lucide-react';
+import { useRef } from 'react';
 
 function App() {
   const [activeSection, setActiveSection] = useState('hero');
   const [isScrolled, setIsScrolled] = useState(false);
+  const cursorRef = useRef(null);
+  const dotRef = useRef(null);
+  const [ripples, setRipples] = useState([]);
 
   // Handle scroll events for navbar styling and active section
   useEffect(() => {
@@ -24,7 +28,7 @@ function App() {
       setIsScrolled(window.scrollY > 50);
 
       // Determine active section
-      const sections = ['hero', 'about', 'shipped', 'unshipped', 'contact'];
+      const sections = ['hero', 'about', 'shipped', 'contact'];
       const current = sections.find(section => {
         const element = document.getElementById(section);
         if (element) {
@@ -48,127 +52,189 @@ function App() {
     }
   };
 
+  // Water ripple effect on cursor movement
+  useEffect(() => {
+    let lastRippleTime = 0;
+    const rippleThrottle = 50; // Create ripple every 50ms
+    let rippleIdCounter = 0;
+
+    const onMove = (e) => {
+      const now = Date.now();
+      if (now - lastRippleTime > rippleThrottle) {
+        const newRipple = {
+          id: rippleIdCounter++,
+          x: e.clientX,
+          y: e.clientY,
+          timestamp: now
+        };
+
+        setRipples(prev => [...prev, newRipple]);
+        lastRippleTime = now;
+
+        // Remove ripple after animation completes (1.5s)
+        setTimeout(() => {
+          setRipples(prev => prev.filter(r => r.id !== newRipple.id));
+        }, 1500);
+      }
+    };
+
+    window.addEventListener('mousemove', onMove);
+    return () => window.removeEventListener('mousemove', onMove);
+  }, []);
+
+  // Cursor effects: blob + dot with slight lag and hover amplification
+  useEffect(() => {
+    let rafId;
+    const pos = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    const lerp = { x: pos.x, y: pos.y };
+
+    const onMove = (e) => {
+      pos.x = e.clientX;
+      pos.y = e.clientY;
+    };
+
+    const onOver = (e) => {
+      const interactive = e.target.closest && e.target.closest('a,button,input,textarea,select,label');
+      if (cursorRef.current) {
+        if (interactive) cursorRef.current.classList.add('cursor--active');
+        else cursorRef.current.classList.remove('cursor--active');
+      }
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseover', onOver, { passive: true });
+
+    const loop = () => {
+      lerp.x += (pos.x - lerp.x) * 0.12;
+      lerp.y += (pos.y - lerp.y) * 0.12;
+
+      if (cursorRef.current) {
+        cursorRef.current.style.transform = `translate3d(${lerp.x - cursorRef.current.offsetWidth / 2}px, ${lerp.y - cursorRef.current.offsetHeight / 2}px, 0)`;
+      }
+      if (dotRef.current) {
+        dotRef.current.style.transform = `translate3d(${pos.x - dotRef.current.offsetWidth / 2}px, ${pos.y - dotRef.current.offsetHeight / 2}px, 0)`;
+      }
+
+      rafId = requestAnimationFrame(loop);
+    };
+
+    loop();
+
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseover', onOver);
+      cancelAnimationFrame(rafId);
+    };
+  }, []);
+
   // ============================================================
   // CUSTOMIZABLE CONTENT - UPDATE THESE SECTIONS WITH YOUR INFO
   // ============================================================
 
   const personalInfo = {
-    name: "Alex Morgan",
-    tagline: "Product Manager | Turning Ideas into Impact",
-    email: "alex.morgan@email.com",
-    linkedin: "https://linkedin.com/in/yourprofile",
-    github: "https://github.com/yourprofile"
+    name: "Monil Pokar",
+    tagline: "AI Product and Delivery | IIT Kanpur",
+    email: "monilpokar.usa@gmail.com",
+    linkedin: "https://www.linkedin.com/in/monil-pokar/",
+    github: "https://github.com/pokar-monil"
   };
 
   const aboutContent = {
     bio: [
-      "I'm a product manager with 6+ years of experience building products that users love and businesses need. My approach combines data-driven decision making with deep empathy for user needs, ensuring every feature we ship creates real value.",
-      "I've led product development across B2B SaaS, consumer mobile apps, and internal tools, working with cross-functional teams to take concepts from ideation through launch and beyond. I believe the best products come from rapid experimentation, user feedback, and a willingness to pivot when the data tells us to.",
-      "What drives me is the challenge of solving complex problems with elegant solutions. I'm equally comfortable diving into analytics dashboards, sketching wireframes with designers, or working through technical constraints with engineering teams."
+      "AI Product manager with 6.5+ years of experience delivering enterprise AI solutions for BFSI and SaaS clients. Proven track record of owning AI projects end-to-end—from Proof of Concept to production—across LLM, RAG, and Vision-based systems, working cross-functionally with Sales, Engineering, and client stakeholders.",
+      "I've led product delivery across enterprise AI platforms, healthtech, and BFSI, working with cross-functional teams to take concepts from POC through production rollout. My approach combines rapid experimentation, user research, and data-driven iteration to ship solutions that create measurable business impact.",
+      "What drives me is building AI products that solve real problems. I'm equally comfortable designing evaluation frameworks, debugging API integrations, conducting user interviews, or training enterprise teams on AI adoption best practices."
     ],
     skills: [
-      { icon: Target, name: "Product Strategy", color: "text-blue-600" },
-      { icon: Users, name: "User Research", color: "text-purple-600" },
-      { icon: BarChart3, name: "Data Analysis", color: "text-green-600" },
-      { icon: Lightbulb, name: "Product Design", color: "text-yellow-600" },
-      { icon: TrendingUp, name: "Growth & Metrics", color: "text-red-600" },
-      { icon: Zap, name: "Agile & Scrum", color: "text-indigo-600" }
+      { icon: Target, name: "AI/ML Products", color: "text-blue-600" },
+      { icon: Users, name: "Enterprise Delivery", color: "text-purple-600" },
+      { icon: BarChart3, name: "LLM Evaluation", color: "text-green-600" },
+      { icon: Lightbulb, name: "RAG & Agents", color: "text-yellow-600" },
+      { icon: TrendingUp, name: "POC to Production", color: "text-red-600" },
+      { icon: Zap, name: "API Integration", color: "text-indigo-600" }
     ]
   };
 
-  const shippedProducts = [
+  const workExperience = [
     {
-      title: "Enterprise Analytics Dashboard",
-      company: "TechCorp SaaS",
-      period: "2023 - 2024",
-      description: "Led the development of a comprehensive analytics platform that helps enterprise clients visualize and act on their data. Coordinated between 3 engineering teams and design to deliver a complex feature on time.",
-      impact: [
-        "Increased user engagement by 45%",
-        "Reduced time-to-insight by 60%",
-        "Achieved 92% customer satisfaction score"
-      ],
-      technologies: ["React", "Python", "SQL", "Mixpanel", "Figma"],
-      image: "dashboard-placeholder.jpg"
+      company: "Lumio AI",
+      role: "Senior Product Manager",
+      industry: "Enterprise AI",
+      duration: "12 months",
+      period: "Jan 2025 - Present",
+      color: "border-blue-600"
     },
     {
-      title: "Mobile Checkout Optimization",
-      company: "ShopNow E-commerce",
-      period: "2022 - 2023",
-      description: "Redesigned the mobile checkout flow to reduce friction and cart abandonment. Conducted extensive A/B testing and user research to validate each iteration before full rollout.",
-      impact: [
-        "Reduced cart abandonment by 28%",
-        "Increased mobile conversion rate by 35%",
-        "Generated $2.3M additional annual revenue"
-      ],
-      technologies: ["React Native", "Firebase", "Stripe", "Google Analytics"],
-      image: "mobile-checkout-placeholder.jpg"
+      company: "Plum Insurance",
+      role: "Product Initiatives, CTO's Office",
+      industry: "Insurtech",
+      duration: "10 months",
+      period: "Feb 2024 - Nov 2024",
+      color: "border-green-600"
     },
     {
-      title: "Internal Team Collaboration Tool",
-      company: "StartupXYZ",
-      period: "2021 - 2022",
-      description: "Built from scratch an internal tool to streamline communication between product, engineering, and design teams. Focused on async communication and reducing meeting overhead.",
-      impact: [
-        "Saved 12 hours per team per week",
-        "Adopted by 200+ employees within 2 months",
-        "Reduced cross-team meetings by 40%"
-      ],
-      technologies: ["Vue.js", "Node.js", "PostgreSQL", "WebSockets"],
-      image: "collab-tool-placeholder.jpg"
+      company: "RISA Health",
+      role: "Product Analyst",
+      industry: "Healthtech",
+      duration: "24 months",
+      period: "Feb 2022 - Jan 2024",
+      color: "border-purple-600"
     },
     {
-      title: "AI-Powered Content Recommendations",
-      company: "MediaStream Platform",
-      period: "2020 - 2021",
-      description: "Shipped a machine learning-based recommendation engine that personalizes content for users based on viewing history and preferences. Worked closely with ML engineers to balance accuracy with explainability.",
-      impact: [
-        "Increased user session time by 52%",
-        "Improved content discovery by 67%",
-        "Reached 500K daily active users"
-      ],
-      technologies: ["Python", "TensorFlow", "React", "AWS", "Redis"],
-      image: "ai-recs-placeholder.jpg"
+      company: "Societe Generale",
+      role: "Software Developer",
+      industry: "BFSI",
+      duration: "30 months",
+      period: "Jul 2019 - Jan 2022",
+      color: "border-red-600"
     }
   ];
 
-  const unshippedProducts = [
+  const shippedProducts = [
     {
-      title: "Social Shopping Features",
-      company: "ShopNow E-commerce",
-      period: "2023",
-      description: "Proposed a suite of social features including shared wishlists, friend recommendations, and group buying. The concept showed promise in early user testing but required significant engineering resources.",
-      reason: "Deprioritized due to technical complexity and competing priorities. The team needed to focus on core platform stability after rapid growth.",
-      learnings: [
-        "Validated the user desire for social shopping through surveys (78% interested)",
-        "Learned to better assess technical feasibility earlier in the ideation process",
-        "Realized that great ideas need the right timing and resources to succeed"
-      ]
+      title: "Logistics Document Extraction using AI Agents",
+      company: "Lumio AI",
+      period: "2025",
+      summary: "Built an end-to-end document extraction pipeline for logistics agreements using LLMs + Vision models, achieving ~90% extraction accuracy. Designed a model-agnostic, configurable architecture enabling rapid switching across OCR, embedding, and LLM providers. Implemented an evaluation framework to benchmark prompts, models, and chunking strategies across accuracy, latency, and cost. Built a human-in-the-loop review system allowing manual correction and feedback to continuously improve extraction quality.",
+      videoUrl: "https://www.loom.com/share/a5635574278a4eb8ada7a2672898f18c",
+      impact: [
+        "Achieved ~90% extraction accuracy",
+        "Model-agnostic architecture with rapid provider switching",
+        "Built evaluation framework for accuracy, latency, and cost benchmarking"
+      ],
+      technologies: ["LLMs", "Vision Models", "OCR", "Python", "Embeddings", "RAG"],
+      image: "logistics-ai-placeholder.jpg"
     },
     {
-      title: "Voice-Activated Analytics",
-      company: "TechCorp SaaS",
-      period: "2022",
-      description: "Envisioned a voice interface for querying analytics data, allowing users to ask questions and get insights without clicking through dashboards. Built a working prototype with promising results.",
-      reason: "Pivot after user testing revealed most users preferred visual dashboards. Voice was interesting but not their primary pain point.",
-      learnings: [
-        "User interviews don't always predict actual usage behavior",
-        "Tested with 45 users and found only 12% would use voice regularly",
-        "Sometimes the most innovative solution isn't the right solution"
-      ]
+      title: "LLM Evaluation Platform",
+      company: "Lumio AI",
+      period: "2025",
+      summary: "Designed and built an LLM evaluation system to assess document extraction pipelines across multiple AI configurations. Independently built an MVP using bolt.dev (no engineering support), demoed to enterprise clients, and closed a $10K deal within 40 days. Tracked key delivery metrics including cost per extraction, OCR accuracy, LLM accuracy, latency, prompt versions, and back-testing results.",
+      videoUrl: "https://www.loom.com/share/4c1cb2de8b3849a695694327aec14594",
+      impact: [
+        "Closed $10K enterprise deal in 40 days",
+        "Built MVP independently using bolt.dev",
+        "Enabled scalable evaluation for any document extraction workflow"
+      ],
+      technologies: ["bolt.dev", "LLMs", "Python", "Evaluation Frameworks"],
+      image: "llm-eval-placeholder.jpg"
     },
     {
-      title: "Automated Onboarding Flow",
-      company: "StartupXYZ",
-      period: "2021",
-      description: "Designed an intelligent onboarding system that would adapt based on user role, team size, and use case. Would have significantly reduced time-to-value for new customers.",
-      reason: "Company pivoted to focus on enterprise segment, requiring a different onboarding approach entirely. The original concept was too consumer-focused.",
-      learnings: [
-        "Market changes can invalidate even well-researched product decisions",
-        "Built flexibility into future product roadmaps to handle pivots",
-        "Salvaged key learnings and applied them to the new enterprise onboarding"
-      ]
+      title: "RAG-Based Customer Support Agent",
+      company: "Lumio AI (HP Project)",
+      period: "2025",
+      summary: "Built an internal RAG-powered support chatbot to automate resolution of ~10% of business support tickets. Partnered with HP business teams to understand workflows and restructure knowledge bases for optimal retrieval. Delivered a production-ready agent that reduced manual effort and improved average handling time for support queries.",
+      videoUrl: "https://drive.google.com/file/d/194nfxUmY9CVwonjs6bo3jSC2ItueGh4U/view?usp=sharing",
+      impact: [
+        "Automated ~10% of support tickets",
+        "Reduced average handling time by ~18%",
+        "Restructured knowledge bases for optimal retrieval"
+      ],
+      technologies: ["RAG", "LLMs", "Vector Databases", "Python", "Knowledge Management"],
+      image: "rag-support-placeholder.jpg"
     }
   ];
+
 
   // ============================================================
   // END CUSTOMIZABLE CONTENT
@@ -191,8 +257,7 @@ function App() {
             <div className="hidden md:flex space-x-8">
               {[
                 { id: 'about', label: 'About' },
-                { id: 'shipped', label: 'Shipped' },
-                { id: 'unshipped', label: 'Unshipped' },
+                { id: 'shipped', label: 'Recent Projects' },
                 { id: 'contact', label: 'Contact' }
               ].map(({ id, label }) => (
                 <button
@@ -281,18 +346,45 @@ function App() {
         </div>
       </section>
 
-      {/* Shipped Products Section */}
+      {/* Work Experience Section */}
+      <section className="py-24 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl font-bold text-gray-900 mb-12 text-center">Work Experience</h2>
+
+          <div className="space-y-4">
+            {workExperience.map((job, index) => (
+              <div
+                key={index}
+                className={`bg-white border-l-4 ${job.color} rounded-lg shadow-md hover:shadow-lg transition-all duration-300 p-6`}
+              >
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-bold text-gray-900">{job.role}</h3>
+                  </div>
+                  <div className="text-right">
+                    <h3 className="text-xl font-bold text-gray-900">{job.company}</h3>
+                    <p className="text-sm text-gray-600 mt-1">{job.industry}</p>
+                    <p className="text-sm text-gray-600">{job.period} • {job.duration}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Recent Projects Section */}
       <section id="shipped" className="py-24 bg-gradient-to-b from-white to-green-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <div className="inline-flex items-center space-x-2 mb-4">
               <CheckCircle2 className="w-8 h-8 text-green-600" />
-              <h2 className="text-4xl font-bold text-gray-900">Shipped Products</h2>
+              <h2 className="text-4xl font-bold text-gray-900">Recent Projects</h2>
             </div>
-            <p className="text-xl text-gray-600">Ideas That Got Built</p>
+            <p className="text-xl text-gray-600">Recent Work & Impact</p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 gap-8">
             {shippedProducts.map((product, index) => (
               <div
                 key={index}
@@ -314,9 +406,24 @@ function App() {
                     </span>
                   </div>
 
-                  <p className="text-gray-600 mb-4 leading-relaxed">
-                    {product.description}
+                  <p className="text-gray-700 mb-4 leading-relaxed">
+                    {product.summary || product.description}
                   </p>
+
+                  {/* Watch Demo CTA */}
+                  {product.videoUrl && (
+                    <div className="mb-4">
+                      <a
+                        href={product.videoUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+                      >
+                        <Play className="w-4 h-4" />
+                        <span>Watch Demo</span>
+                      </a>
+                    </div>
+                  )}
 
                   {/* Impact Metrics */}
                   <div className="mb-4">
@@ -345,75 +452,6 @@ function App() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Unshipped Products Section */}
-      <section id="unshipped" className="py-24 bg-gradient-to-b from-green-50 to-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center space-x-2 mb-4">
-              <Archive className="w-8 h-8 text-gray-600" />
-              <h2 className="text-4xl font-bold text-gray-900">Unshipped Products</h2>
-            </div>
-            <p className="text-xl text-gray-600">Ideas That Never Made It (But Taught Me Something)</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {unshippedProducts.map((product, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-gray-200"
-              >
-                {/* Product Header */}
-                <div className="h-32 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                  <Archive className="w-12 h-12 text-gray-400" />
-                </div>
-
-                <div className="p-6">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-1">{product.title}</h3>
-                      <p className="text-sm text-gray-500">{product.company} • {product.period}</p>
-                    </div>
-                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
-                      Archived
-                    </span>
-                  </div>
-
-                  <p className="text-gray-600 mb-4 text-sm leading-relaxed">
-                    {product.description}
-                  </p>
-
-                  {/* Reason */}
-                  <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-                    <h4 className="text-xs font-semibold text-gray-900 mb-1">Why it didn't ship:</h4>
-                    <p className="text-xs text-gray-600 leading-relaxed">{product.reason}</p>
-                  </div>
-
-                  {/* Learnings */}
-                  <div>
-                    <h4 className="text-xs font-semibold text-gray-900 mb-2">Key Learnings:</h4>
-                    <ul className="space-y-1">
-                      {product.learnings.map((learning, i) => (
-                        <li key={i} className="flex items-start text-xs text-gray-600">
-                          <Lightbulb className="w-3 h-3 text-yellow-500 mr-2 flex-shrink-0 mt-0.5" />
-                          <span>{learning}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-12 text-center">
-            <p className="text-gray-600 italic max-w-2xl mx-auto">
-              "The best product managers learn as much from what doesn't ship as from what does.
-              Every archived project is a lesson in prioritization, feasibility, and user needs."
-            </p>
           </div>
         </div>
       </section>
@@ -468,6 +506,26 @@ function App() {
           </p>
         </div>
       </footer>
+
+      {/* Water ripples overlay */}
+      <div className="pointer-events-none fixed inset-0 z-40 overflow-hidden">
+        {ripples.map(ripple => (
+          <div
+            key={ripple.id}
+            className="water-ripple"
+            style={{
+              left: ripple.x,
+              top: ripple.y,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Cursor effects overlay (pointer-events none) */}
+      <div className="pointer-events-none fixed inset-0 z-50">
+        <div ref={cursorRef} className="cursor-blob" aria-hidden="true" />
+        <div ref={dotRef} className="cursor-dot" aria-hidden="true" />
+      </div>
     </div>
   );
 }
